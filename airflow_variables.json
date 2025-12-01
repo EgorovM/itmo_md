@@ -1,0 +1,13 @@
+{
+  "MONGODB_HOST": "mongodb",
+  "MONGODB_PORT": "27017",
+  "MONGODB_USER": "mongo_user",
+  "MONGODB_PASSWORD": "mongo_password",
+  "MONGODB_DB": "banking_data",
+  "MONGODB_COLLECTION": "transactions",
+  "POSTGRES_HOST": "postgres",
+  "POSTGRES_PORT": "5432",
+  "POSTGRES_USER": "analytics_user",
+  "POSTGRES_PASSWORD": "analytics_password",
+  "POSTGRES_DB": "analytics_db"
+}
