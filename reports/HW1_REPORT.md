@@ -81,8 +81,8 @@ DAG запускается каждые 30 минут и обрабатывае�
 
 ## Ссылки
 
-- **Airflow UI**: http://localhost:8080 (airflow/airflow)
-- **Grafana**: http://localhost:3001 (admin/admin)
+- **Airflow UI**: http://158.160.186.46:8080 (airflow/airflow)
+- **Grafana**: http://158.160.186.46:3001 (admin/admin)
 - **Репозиторий**: [GitHub репозиторий проекта]
 
 ## Артефакты
