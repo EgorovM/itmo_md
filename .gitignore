@@ -58,6 +58,8 @@ uv.lock
 # Docker
 *.log
 
+dbt/edr_target/
+
 # Kaggle data
 data/
 *.csv

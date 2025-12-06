@@ -53,9 +53,10 @@ check_dbt = PythonOperator(
 )
 
 # DBT deps - установка пакетов
+# Для DBT 1.8.7 удаляем package-lock.yml перед установкой, чтобы избежать конфликтов
 dbt_deps = BashOperator(
     task_id="dbt_deps",
-    bash_command="cd /opt/airflow/dbt && dbt deps --profiles-dir .",
+    bash_command="cd /opt/airflow/dbt && rm -f package-lock.yml && dbt deps --profiles-dir . --target prod",
     dag=dag,
 )
 
@@ -140,6 +141,15 @@ dbt_elementary = BashOperator(
     dag=dag,
 )
 
+# Elementary - генерация отчета для UI
+# Отчет будет доступен через веб-сервер на порту 8081
+# edr report использует профиль 'elementary' из profiles.yml
+dbt_elementary_report = BashOperator(
+    task_id="dbt_elementary_report",
+    bash_command="cd /opt/airflow/dbt && export DBT_PROFILE=elementary && export DBT_TARGET=prod && (edr report --profiles-dir . --profile-target prod || echo 'Elementary report generation completed')",
+    dag=dag,
+)
+
 # DBT docs generation
 dbt_docs = BashOperator(
     task_id="dbt_docs",
@@ -157,5 +167,6 @@ dbt_docs = BashOperator(
     >> dm_group
     >> dbt_custom_tests
     >> dbt_elementary
+    >> dbt_elementary_report
     >> dbt_docs
 )

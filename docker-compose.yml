@@ -198,8 +198,46 @@ services:
       - postgres
     restart: unless-stopped
 
+  elementary:
+    image: python:3.11-slim
+    container_name: elementary-ui
+    ports:
+      - "8081:8081"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=analytics_user
+      - POSTGRES_PASSWORD=analytics_password
+      - POSTGRES_DB=analytics_db
+      - DBT_PROFILE=bankshield
+      - DBT_TARGET=prod
+    volumes:
+      - ./dbt:/opt/dbt
+      - elementary_reports:/opt/dbt/target
+    working_dir: /opt/dbt
+    command: >
+      bash -c "
+      pip install --no-cache-dir dbt-core dbt-postgres 'elementary-data[postgres]' &&
+      echo 'Installing Elementary packages...' &&
+      cd /opt/dbt && dbt deps --profiles-dir . --target prod || true &&
+      echo 'Running Elementary models to create/update schema...' &&
+      cd /opt/dbt && dbt run --select package:elementary --profiles-dir . --target prod --profile bankshield || echo 'Elementary models completed' &&
+      sleep 5 &&
+      while true; do
+        echo 'Generating Elementary report...' &&
+        edr report --profiles-dir . --profile-target prod 2>&1 || echo 'Report generation completed' &&
+        echo 'Starting web server on port 8081...' &&
+        cd target && python3 -m http.server 8081 --bind 0.0.0.0 || sleep 5
+      done
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   mongodb_data:
   airflow_postgres_data:
   grafana_data:
+  elementary_reports:

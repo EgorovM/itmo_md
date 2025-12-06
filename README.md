@@ -138,6 +138,11 @@ docker-compose logs -f data-collector
    - Username: `admin`
    - Password: `admin`
 
+7. Откройте Elementary EDR (Data Quality Monitoring):
+   - URL: http://localhost:8081
+   - Показывает результаты мониторинга качества данных, аномалии и метрики
+   - Данные обновляются после выполнения DBT пайплайна в Airflow
+
 ## REST API
 
 BankShield предоставляет REST API для управления транзакциями.
