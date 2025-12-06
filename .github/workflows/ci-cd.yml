@@ -92,9 +92,9 @@ jobs:
 
           # Set permissions for airflow and data directories
           ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \
-            chmod -R 777 airflow data 2>/dev/null || true && \
-            mkdir -p airflow/logs airflow/config airflow/plugins && \
-            chmod -R 777 airflow/logs airflow/config airflow/plugins data"
+            mkdir -p airflow/logs airflow/config airflow/plugins data && \
+            sudo chown -R \$USER:\$USER airflow data 2>/dev/null || chown -R \$USER:\$USER airflow data 2>/dev/null || true && \
+            sudo chmod -R 777 airflow data 2>/dev/null || chmod -R 777 airflow data 2>/dev/null || true"
 
           # Deploy on server
           ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \
