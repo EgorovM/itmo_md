@@ -22,11 +22,14 @@ class KaggleDatasetLoader:
         """
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.api = KaggleApi()
-        self._authenticate()
+        self.api: KaggleApi | None = None
+        self._authenticated = False
 
     def _authenticate(self) -> None:
-        """Аутентификация в Kaggle API."""
+        """Аутентификация в Kaggle API (ленивая инициализация)."""
+        if self._authenticated and self.api is not None:
+            return
+
         try:
             # Kaggle API ищет credentials в ~/.kaggle/kaggle.json
             # или в переменной окружения KAGGLE_API_TOKEN (формат: username:key)
@@ -48,7 +51,9 @@ class KaggleDatasetLoader:
 
             # Пытаемся аутентифицироваться только если есть credentials
             if os.getenv("KAGGLE_USERNAME") and os.getenv("KAGGLE_KEY"):
+                self.api = KaggleApi()
                 self.api.authenticate()
+                self._authenticated = True
                 logger.info("Успешная аутентификация в Kaggle API")
             else:
                 logger.info("Kaggle credentials не найдены, аутентификация пропущена")
@@ -76,6 +81,15 @@ class KaggleDatasetLoader:
         Returns:
             Path к директории с загруженными данными
         """
+        # Ленивая аутентификация
+        self._authenticate()
+
+        if self.api is None:
+            raise RuntimeError(
+                "Kaggle API не аутентифицирован. "
+                "Установите KAGGLE_API_TOKEN=username:key или создайте ~/.kaggle/kaggle.json"
+            )
+
         dataset_dir = self.data_dir / dataset.replace("/", "_")
         dataset_dir.mkdir(parents=True, exist_ok=True)
 
