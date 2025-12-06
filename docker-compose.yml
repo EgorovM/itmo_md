@@ -159,6 +159,27 @@ services:
       - ./src:/app/src:ro
       - ./data:/app/data
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: bankshield-api
+    environment:
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_USER=mongo_user
+      - MONGODB_PASSWORD=mongo_password
+      - MONGODB_DB=banking_data
+      - MONGODB_COLLECTION=transactions
+    ports:
+      - "8100:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src:ro
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana

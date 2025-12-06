@@ -6,10 +6,14 @@
 
 BankShield - это система для сбора, обработки и анализа банковских транзакций с целью выявления мошеннических операций. Проект включает:
 
+- **REST API** с автодокументацией Swagger для генерации и управления транзакциями
 - Сбор транзакций (синтетические данные или загрузка с Kaggle)
 - Хранение в MongoDB (источник данных)
 - ETL-процесс для загрузки в PostgreSQL (аналитическая БД)
+- DBT для трансформации данных (STG -> ODS -> DWH -> DM)
+- Elementary для мониторинга качества данных
 - Интеграция с Apache Airflow для оркестрации
+- Grafana дашборды для визуализации
 
 ## Структура проекта
 
@@ -62,7 +66,7 @@ BankShield - это система для сбора, обработки и ан
 ### Настройка Kaggle API (опционально)
 
 1. Зарегистрируйтесь на [Kaggle](https://www.kaggle.com/)
-2. Создайте API token: Account → API → Create New Token
+2. Создайте API token: Account -> API -> Create New Token
 
 ```bash
 export KAGGLE_API_TOKEN=username:your_api_key
@@ -124,6 +128,30 @@ docker-compose logs -f data-collector
    - URL: http://localhost:8080
    - Username: `airflow`
    - Password: `airflow` (по умолчанию)
+
+5. Откройте BankShield API (Swagger):
+   - URL: http://localhost:8100/docs
+   - ReDoc: http://localhost:8100/redoc
+
+6. Откройте Grafana:
+   - URL: http://localhost:3001
+   - Username: `admin`
+   - Password: `admin`
+
+## REST API
+
+BankShield предоставляет REST API для управления транзакциями.
+
+### Endpoints
+
+| Method | Endpoint | Описание |
+|--------|----------|----------|
+| GET | `/health` | Проверка состояния сервиса |
+| GET | `/transactions/generate` | Генерация одной транзакции (без сохранения) |
+| POST | `/transactions` | Создание и сохранение транзакции |
+| POST | `/transactions/batch?count=N` | Генерация N транзакций |
+| GET | `/transactions/stats` | Статистика по транзакциям |
+| GET | `/transactions/recent?limit=N` | Последние N транзакций |
 
 ## Конфигурация
 

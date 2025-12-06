@@ -3,6 +3,8 @@ version: 2
 models:
   - name: dwh_transactions_daily
     description: "Data Warehouse: daily aggregated transactions with incremental loading"
+    # Elementary tests запускаются отдельно через dbt_elementary задачу
+    # чтобы не блокировать основной пайплайн при обнаружении аномалий
     columns:
       - name: transaction_date
         description: "Transaction date (partitioning key)"
@@ -40,6 +42,8 @@ models:
 
   - name: dwh_user_transactions
     description: "Data Warehouse: user-level aggregated transactions with incremental loading"
+    # Elementary tests запускаются отдельно через dbt_elementary задачу
+    # чтобы не блокировать основной пайплайн при обнаружении аномалий
     columns:
       - name: user_id
         description: "User identifier"

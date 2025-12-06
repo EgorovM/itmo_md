@@ -90,11 +90,11 @@ jobs:
             --exclude 'airflow/logs' \
             ./ $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
 
-          # Set permissions for airflow and data directories
+          # Set permissions for airflow, data, and dbt directories
           ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \
-            mkdir -p airflow/logs airflow/config airflow/plugins data && \
-            sudo chown -R \$USER:\$USER airflow data 2>/dev/null || chown -R \$USER:\$USER airflow data 2>/dev/null || true && \
-            sudo chmod -R 777 airflow data 2>/dev/null || chmod -R 777 airflow data 2>/dev/null || true"
+            mkdir -p airflow/logs airflow/config airflow/plugins data dbt/target dbt/dbt_packages && \
+            sudo chown -R \$USER:\$USER airflow data dbt 2>/dev/null || chown -R \$USER:\$USER airflow data dbt 2>/dev/null || true && \
+            sudo chmod -R 777 airflow data dbt 2>/dev/null || chmod -R 777 airflow data dbt 2>/dev/null || true"
 
           # Deploy on server
           ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \

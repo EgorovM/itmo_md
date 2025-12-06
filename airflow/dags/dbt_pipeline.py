@@ -132,6 +132,8 @@ dbt_custom_tests = BashOperator(
 
 # Elementary - запуск моделей для мониторинга и детекции аномалий
 # В Elementary 0.10.0 модели создают таблицы для мониторинга данных
+# Elementary тесты убраны из schema.yml, чтобы не блокировать основной пайплайн
+# Мониторинг работает через модели Elementary, результаты доступны в UI
 dbt_elementary = BashOperator(
     task_id="dbt_elementary",
     bash_command="cd /opt/airflow/dbt && dbt run --select package:elementary --profiles-dir . --target prod",

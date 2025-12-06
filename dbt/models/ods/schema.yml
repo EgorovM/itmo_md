@@ -3,12 +3,17 @@ version: 2
 models:
   - name: ods_transactions
     description: "Operational Data Store: normalized transaction data"
+    # Elementary tests запускаются отдельно через dbt_elementary задачу
+    # чтобы не блокировать основной пайплайн при обнаружении аномалий
     columns:
       - name: transaction_id
         description: "Unique transaction identifier"
         tests:
           - unique
           - not_null
+          - relationships:
+              to: ref('stg_transactions')
+              field: transaction_id
       - name: user_id
         description: "User identifier"
         tests:

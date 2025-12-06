@@ -4,4 +4,4 @@ from bankshield.collector import TransactionCollector
 from bankshield.kaggle_loader import KaggleDatasetLoader
 
 __all__ = ["TransactionCollector", "KaggleDatasetLoader"]
-__version__ = "0.1.0"
+__version__ = "1.0.0"

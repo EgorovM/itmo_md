@@ -208,8 +208,8 @@ dbt/
 
 - **Airflow UI**: http://158.160.186.46:8080 (airflow/airflow)
 - **DBT DAG**: `dbt_transformations`
-- **PostgreSQL**: `158.160.186.46:5433` (analytics_user/analytics_password)
-
+- **PostgreSQL**: `http://158.160.186.46:5433` (analytics_user/analytics_password)
+- **Swagger документация**: `http://158.160.186.46:8100/docs`
 ## Credentials для подключения
 
 **PostgreSQL**:
