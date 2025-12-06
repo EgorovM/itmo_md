@@ -33,7 +33,7 @@
 
 В Airflow настроены переменные для подключения к MongoDB и PostgreSQL:
 
-![Airflow Variables](figures/airflow_variables.png)
+![Airflow Variables](../figures/airflow_variables.png)
 
 ### DAG: transactions_etl
 
@@ -44,9 +44,9 @@
 
 DAG запускается каждые 30 минут и обрабатывает только новые транзакции (на основе timestamp).
 
-![Airflow DAG List](figures/airflow-dag-list.png)
+![Airflow DAG List](../figures/airflow-dag-list.png)
 
-![Airflow DAG Graph](figures/airflow_dag_graph.png)
+![Airflow DAG Graph](../figures/airflow_dag_graph.png)
 
 ### Схема данных в PostgreSQL
 
@@ -62,7 +62,7 @@ DAG запускается каждые 30 минут и обрабатывае�
 
 Создан дашборд для визуализации транзакций и статистики по мошенничеству:
 
-![Grafana Dashboard](figures/graphana-transactions-dashboard.png)
+![Grafana Dashboard](../figures/graphana-transactions-dashboard.png)
 
 Дашборд включает:
 - Общее количество транзакций
