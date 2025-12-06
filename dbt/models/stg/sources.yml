@@ -1,0 +1,64 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw data sources loaded from MongoDB via Airflow ETL"
+    database: analytics_db
+    schema: public
+    tables:
+      - name: transactions
+        description: "Raw transaction data extracted from MongoDB"
+        columns:
+          - name: transaction_id
+            description: "Unique transaction identifier"
+            tests:
+              - unique
+              - not_null
+          - name: user_id
+            description: "User identifier"
+            tests:
+              - not_null
+          - name: amount
+            description: "Transaction amount"
+            tests:
+              - not_null
+              - dbt_utils.accepted_range:
+                  min_value: 0
+                  inclusive: true
+          - name: currency
+            description: "Transaction currency (USD, EUR, RUB)"
+          - name: transaction_type
+            description: "Type of transaction (debit, credit, transfer, etc.)"
+          - name: merchant_category
+            description: "Category of merchant"
+          - name: merchant_name
+            description: "Name of merchant"
+          - name: country
+            description: "Country"
+          - name: city
+            description: "City"
+          - name: latitude
+            description: "Latitude"
+          - name: longitude
+            description: "Longitude"
+          - name: device_type
+            description: "Device type"
+          - name: os
+            description: "Operating system"
+          - name: ip_address
+            description: "IP address"
+          - name: session_id
+            description: "Session identifier"
+          - name: is_fraud
+            description: "Fraud flag"
+          - name: risk_score
+            description: "Risk score (0-1)"
+            tests:
+              - dbt_utils.accepted_range:
+                  min_value: 0
+                  max_value: 1
+                  inclusive: true
+          - name: timestamp
+            description: "Transaction timestamp"
+            tests:
+              - not_null

@@ -1,0 +1,21 @@
+# Elementary configuration
+# https://docs.elementary-data.com/
+
+vars:
+  elementary:
+    # Enable Elementary monitoring
+    dbt_artifacts:
+      enabled: true
+
+    # Data quality tests
+    data_quality:
+      enabled: true
+
+    # Anomaly detection
+    anomaly_detection:
+      enabled: true
+      sensitivity: medium
+
+    # Schema changes monitoring
+    schema_changes:
+      enabled: true

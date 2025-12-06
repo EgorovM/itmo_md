@@ -1,0 +1,62 @@
+version: 2
+
+models:
+  - name: stg_transactions
+    description: "Staging model for cleaned and parsed transaction data"
+    columns:
+      - name: transaction_id
+        description: "Unique transaction identifier"
+        tests:
+          - unique
+          - not_null
+      - name: user_id
+        description: "User identifier"
+        tests:
+          - not_null
+      - name: amount
+        description: "Transaction amount (cleaned and validated)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+      - name: currency
+        description: "Transaction currency (normalized to uppercase)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['USD', 'EUR', 'RUB']
+      - name: transaction_type
+        description: "Type of transaction (normalized to lowercase)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['debit', 'credit', 'transfer', 'withdrawal', 'deposit']
+      - name: is_fraud
+        description: "Fraud flag"
+        tests:
+          - not_null
+      - name: risk_score
+        description: "Risk score (0-1)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true
+      - name: transaction_timestamp
+        description: "Transaction timestamp"
+        tests:
+          - not_null
+      - name: is_valid_transaction_id
+        description: "Validation flag for transaction_id"
+        tests:
+          - not_null
+      - name: is_valid_user_id
+        description: "Validation flag for user_id"
+        tests:
+          - not_null
+      - name: is_valid_amount
+        description: "Validation flag for amount"
+        tests:
+          - not_null

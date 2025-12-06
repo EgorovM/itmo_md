@@ -1,0 +1,58 @@
+name: 'bankshield'
+version: '1.0.0'
+config-version: 2
+
+profile: 'bankshield'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  bankshield:
+    # Staging models - очистка и парсинг данных
+    stg:
+      +materialized: view
+      +tags: ["staging", "stg"]
+      +schema: stg
+      +pre-hook: "{{ log('Starting STG models', info=True) }}"
+
+    # Operational Data Store - нормализация
+    ods:
+      +materialized: table
+      +tags: ["ods", "operational"]
+      +schema: ods
+      +pre-hook: "{{ log('Starting ODS models', info=True) }}"
+
+    # Data Warehouse - аналитические витрины
+    dwh:
+      +materialized: table
+      +tags: ["dwh", "warehouse"]
+      +schema: dwh
+      +pre-hook: "{{ log('Starting DWH models', info=True) }}"
+
+    # Data Marts - бизнес-витрины
+    dm:
+      +materialized: table
+      +tags: ["dm", "mart"]
+      +schema: dm
+      +pre-hook: "{{ log('Starting DM models', info=True) }}"
+
+vars:
+  # Переменные для проекта
+  start_date: "2024-01-01"
+  fraud_threshold: 0.7
+
+on-run-start:
+  - "{{ log('Starting DBT run', info=True) }}"
+
+on-run-end:
+  - "{{ log('DBT run completed', info=True) }}"

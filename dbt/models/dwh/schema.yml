@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: dwh_transactions_daily
+    description: "Data Warehouse: daily aggregated transactions with incremental loading"
+    columns:
+      - name: transaction_date
+        description: "Transaction date (partitioning key)"
+        tests:
+          - not_null
+      - name: total_transactions
+        description: "Total number of transactions"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+      - name: fraud_transactions
+        description: "Number of fraud transactions"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+      - name: fraud_rate
+        description: "Fraud rate (0-1)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true
+      - name: total_amount
+        description: "Total transaction amount"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+  - name: dwh_user_transactions
+    description: "Data Warehouse: user-level aggregated transactions with incremental loading"
+    columns:
+      - name: user_id
+        description: "User identifier"
+        tests:
+          - unique
+          - not_null
+      - name: total_transactions
+        description: "Total number of transactions per user"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+      - name: fraud_rate
+        description: "User fraud rate (0-1)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true

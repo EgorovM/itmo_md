@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: ods_transactions
+    description: "Operational Data Store: normalized transaction data"
+    columns:
+      - name: transaction_id
+        description: "Unique transaction identifier"
+        tests:
+          - unique
+          - not_null
+      - name: user_id
+        description: "User identifier"
+        tests:
+          - not_null
+      - name: amount
+        description: "Transaction amount"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+      - name: is_fraud
+        description: "Fraud flag"
+        tests:
+          - not_null
+      - name: risk_score
+        description: "Risk score (0-1)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true
+      - name: transaction_date
+        description: "Transaction date (partitioning key)"
+        tests:
+          - not_null

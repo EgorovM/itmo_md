@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: dm_fraud_analysis
+    description: "Data Mart: fraud analysis business view"
+    columns:
+      - name: analysis_type
+        description: "Type of analysis (daily_fraud or high_risk_users)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['daily_fraud', 'high_risk_users']
+      - name: fraud_count
+        description: "Number of fraud transactions"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+      - name: fraud_rate
+        description: "Fraud rate (0-1)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              inclusive: true
+
+  - name: dm_transaction_summary
+    description: "Data Mart: overall transaction summary"
+    columns:
+      - name: summary_type
+        description: "Type of summary"
+        tests:
+          - not_null
+      - name: total_transactions
+        description: "Total number of transactions"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true

@@ -52,9 +52,10 @@ services:
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
       - ./airflow/config:/opt/airflow/config
+      - ./dbt:/opt/airflow/dbt
     command: >
       bash -c "
-      pip install pymongo psycopg2-binary pandas numpy &&
+      pip install pymongo psycopg2-binary pandas numpy dbt-core dbt-postgres 'elementary-data[postgres]' &&
       airflow webserver
       "
     depends_on:
@@ -79,9 +80,10 @@ services:
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
       - ./airflow/config:/opt/airflow/config
+      - ./dbt:/opt/airflow/dbt
     command: >
       bash -c "
-      pip install pymongo psycopg2-binary pandas numpy &&
+      pip install pymongo psycopg2-binary pandas numpy dbt-core dbt-postgres 'elementary-data[postgres]' &&
       airflow scheduler
       "
     depends_on:
@@ -120,6 +122,7 @@ services:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
+      - ./dbt:/opt/airflow/dbt
     entrypoint: /bin/bash
     command:
       - -c
