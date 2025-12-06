@@ -88,6 +88,10 @@ jobs:
             --exclude '.venv' \
             --exclude 'data' \
             --exclude 'airflow/logs' \
+            --exclude 'dbt/dbt_packages' \
+            --exclude 'dbt/target' \
+            --exclude 'dbt/logs' \
+            --exclude 'dbt/edr_target' \
             ./ $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
 
           # Set permissions for airflow, data, and dbt directories

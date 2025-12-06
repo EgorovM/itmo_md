@@ -58,6 +58,10 @@ uv.lock
 # Docker
 *.log
 
+# DBT
+dbt/dbt_packages/
+dbt/target/
+dbt/logs/
 dbt/edr_target/
 
 # Kaggle data
