@@ -90,6 +90,12 @@ jobs:
             --exclude 'airflow/logs' \
             ./ $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/
 
+          # Set permissions for airflow and data directories
+          ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \
+            chmod -R 777 airflow data 2>/dev/null || true && \
+            mkdir -p airflow/logs airflow/config airflow/plugins && \
+            chmod -R 777 airflow/logs airflow/config airflow/plugins data"
+
           # Deploy on server
           ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \
             docker compose down || true && \
