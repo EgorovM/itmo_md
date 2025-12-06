@@ -70,7 +70,7 @@ with TaskGroup("stg_models", dag=dag) as stg_group:
 
     dbt_stg_test = BashOperator(
         task_id="dbt_stg_test",
-        bash_command="cd /opt/airflow/dbt && dbt test --select stg.* --profiles-dir . --profile bankshield --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt test --select tag:stg --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
@@ -86,7 +86,7 @@ with TaskGroup("ods_models", dag=dag) as ods_group:
 
     dbt_ods_test = BashOperator(
         task_id="dbt_ods_test",
-        bash_command="cd /opt/airflow/dbt && dbt test --select ods.* --profiles-dir . --profile bankshield --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt test --select tag:ods --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
@@ -102,7 +102,7 @@ with TaskGroup("dwh_models", dag=dag) as dwh_group:
 
     dbt_dwh_test = BashOperator(
         task_id="dbt_dwh_test",
-        bash_command="cd /opt/airflow/dbt && dbt test --select dwh.* --profiles-dir . --profile bankshield --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt test --select tag:dwh --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
@@ -118,7 +118,7 @@ with TaskGroup("dm_models", dag=dag) as dm_group:
 
     dbt_dm_test = BashOperator(
         task_id="dbt_dm_test",
-        bash_command="cd /opt/airflow/dbt && dbt test --select dm.* --profiles-dir . --profile bankshield --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt test --select tag:dm --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
