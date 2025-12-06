@@ -79,6 +79,17 @@ jobs:
               exit 0
             fi
 
+            # Проверяем, изменились ли только файлы CI/CD или документация
+            ONLY_CI_FILES=$(echo "$CHANGED_FILES" | grep -vE "^\.github/workflows/" | grep -vE "^\.github/" | grep -vE "^(README|\.md|\.gitignore|\.gitattributes)" | grep -v "^$" || true)
+
+            if [ -z "$ONLY_CI_FILES" ]; then
+              echo "no_changes=true" >> $GITHUB_OUTPUT
+              echo "only_dags=false" >> $GITHUB_OUTPUT
+              echo "deploy_containers=" >> $GITHUB_OUTPUT
+              echo "Only CI/CD or documentation files changed, skipping deployment"
+              exit 0
+            fi
+
             # Проверяем, изменились ли только файлы в airflow/dags/
             ONLY_DAGS=$(echo "$CHANGED_FILES" | grep -v "^airflow/dags/" | grep -v "^$" || true)
 
