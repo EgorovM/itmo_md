@@ -67,22 +67,73 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
             # Получаем список измененных файлов
-            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD || echo "")
             echo "Changed files:"
             echo "$CHANGED_FILES"
+
+            if [ -z "$CHANGED_FILES" ]; then
+              echo "no_changes=true" >> $GITHUB_OUTPUT
+              echo "only_dags=false" >> $GITHUB_OUTPUT
+              echo "deploy_containers=" >> $GITHUB_OUTPUT
+              echo "No files changed, skipping deployment"
+              exit 0
+            fi
 
             # Проверяем, изменились ли только файлы в airflow/dags/
             ONLY_DAGS=$(echo "$CHANGED_FILES" | grep -v "^airflow/dags/" | grep -v "^$" || true)
 
             if [ -z "$ONLY_DAGS" ] && [ -n "$CHANGED_FILES" ]; then
+              echo "no_changes=false" >> $GITHUB_OUTPUT
               echo "only_dags=true" >> $GITHUB_OUTPUT
-              echo "Only DAG files changed, skipping full deployment"
-            else
-              echo "only_dags=false" >> $GITHUB_OUTPUT
-              echo "Other files changed, full deployment needed"
+              echo "deploy_containers=" >> $GITHUB_OUTPUT
+              echo "Only DAG files changed, skipping container deployment"
+              exit 0
             fi
-          else
+
+            # Определяем, какие контейнеры нужно передеплоить
+            CONTAINERS=""
+
+            # Docker compose или Dockerfile - все контейнеры
+            if echo "$CHANGED_FILES" | grep -qE "(docker-compose\.yml|Dockerfile|Dockerfile\.api)"; then
+              CONTAINERS="all"
+            else
+              # data-collector и api контейнеры
+              if echo "$CHANGED_FILES" | grep -qE "^src/"; then
+                CONTAINERS="${CONTAINERS} data-collector api"
+              fi
+
+              # Airflow контейнеры
+              if echo "$CHANGED_FILES" | grep -qE "^airflow/(config|plugins)/"; then
+                CONTAINERS="${CONTAINERS} airflow-webserver airflow-scheduler"
+              fi
+
+              # DBT изменения - Airflow и Elementary
+              if echo "$CHANGED_FILES" | grep -qE "^dbt/"; then
+                CONTAINERS="${CONTAINERS} airflow-webserver airflow-scheduler elementary"
+              fi
+
+              # Grafana
+              if echo "$CHANGED_FILES" | grep -qE "^grafana/"; then
+                CONTAINERS="${CONTAINERS} grafana"
+              fi
+
+              # PostgreSQL или MongoDB - обычно не требуют передеплоя, но можно добавить
+              if echo "$CHANGED_FILES" | grep -qE "(postgres|mongodb)"; then
+                CONTAINERS="${CONTAINERS} postgres mongodb"
+              fi
+            fi
+
+            # Убираем дубликаты и лишние пробелы
+            CONTAINERS=$(echo "$CONTAINERS" | tr ' ' '\n' | sort -u | tr '\n' ' ' | xargs)
+
+            echo "no_changes=false" >> $GITHUB_OUTPUT
             echo "only_dags=false" >> $GITHUB_OUTPUT
+            echo "deploy_containers=$CONTAINERS" >> $GITHUB_OUTPUT
+            echo "Containers to deploy: $CONTAINERS"
+          else
+            echo "no_changes=false" >> $GITHUB_OUTPUT
+            echo "only_dags=false" >> $GITHUB_OUTPUT
+            echo "deploy_containers=all" >> $GITHUB_OUTPUT
             echo "Not a push event, full deployment"
           fi
 
@@ -94,6 +145,11 @@ jobs:
       - name: Add server to known hosts
         run: |
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Skip deployment
+        if: steps.changed-files.outputs.no_changes == 'true'
+        run: |
+          echo "No changes detected, skipping deployment"
 
       - name: Deploy only DAGs
         if: steps.changed-files.outputs.only_dags == 'true'
@@ -108,7 +164,7 @@ jobs:
           echo "DAG files deployed successfully"
 
       - name: Deploy to server
-        if: steps.changed-files.outputs.only_dags == 'false'
+        if: steps.changed-files.outputs.only_dags == 'false' && steps.changed-files.outputs.no_changes == 'false'
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
@@ -140,13 +196,30 @@ jobs:
             sudo chmod -R 777 airflow data dbt 2>/dev/null || chmod -R 777 airflow data dbt 2>/dev/null || true"
 
           # Deploy on server
-          ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \
-            docker compose down || true && \
-            docker compose pull || true && \
-            docker compose up -d --build && \
-            sleep 30 && \
-            docker compose ps && \
-            docker compose logs --tail=50"
+          CONTAINERS="${{ steps.changed-files.outputs.deploy_containers }}"
+          if [ "$CONTAINERS" = "all" ] || [ -z "$CONTAINERS" ]; then
+            echo "Deploying all containers..."
+            ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \
+              docker compose down || true && \
+              docker compose pull || true && \
+              docker compose up -d --build && \
+              sleep 30 && \
+              docker compose ps && \
+              docker compose logs --tail=50"
+          else
+            echo "Deploying specific containers: $CONTAINERS"
+            ssh $SERVER_USER@$SERVER_HOST "cd $DEPLOY_PATH && \
+              for container in $CONTAINERS; do
+                echo \"Rebuilding container: \$container\"
+                docker compose stop \$container || true
+                docker compose rm -f \$container || true
+                docker compose build \$container || true
+                docker compose up -d \$container || true
+              done && \
+              sleep 10 && \
+              docker compose ps && \
+              docker compose logs --tail=50 $CONTAINERS"
+          fi
 
       - name: Health check
         env:
