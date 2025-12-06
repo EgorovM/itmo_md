@@ -168,10 +168,19 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DBT_PROFILES_YML: ${{ secrets.DBT_PROFILES_YML }}
         run: |
           echo "Deploying only DAG files..."
           rsync -avz \
             airflow/dags/ $SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/airflow/dags/
+
+          # Also update profiles.yml if it exists in secret
+          if [ -n "$DBT_PROFILES_YML" ]; then
+            echo "Updating dbt/profiles.yml from secret..."
+            ssh $SERVER_USER@$SERVER_HOST "mkdir -p $DEPLOY_PATH/dbt"
+            echo "$DBT_PROFILES_YML" | ssh $SERVER_USER@$SERVER_HOST "cat > $DEPLOY_PATH/dbt/profiles.yml"
+          fi
+
           echo "DAG files deployed successfully"
 
       - name: Deploy to server
@@ -180,9 +189,15 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DBT_PROFILES_YML: ${{ secrets.DBT_PROFILES_YML }}
         run: |
           # Create deployment directory if it doesn't exist
           ssh $SERVER_USER@$SERVER_HOST "mkdir -p $DEPLOY_PATH"
+
+          # Create dbt/profiles.yml from secret
+          echo "Creating dbt/profiles.yml from secret..."
+          mkdir -p dbt
+          echo "$DBT_PROFILES_YML" > dbt/profiles.yml
 
           # Copy files to server
           rsync -avz --delete \

@@ -63,6 +63,7 @@ dbt/dbt_packages/
 dbt/target/
 dbt/logs/
 dbt/edr_target/
+dbt/profiles.yml
 
 # Kaggle data
 data/

@@ -56,7 +56,7 @@ check_dbt = PythonOperator(
 # Для DBT 1.8.7 удаляем package-lock.yml перед установкой, чтобы избежать конфликтов
 dbt_deps = BashOperator(
     task_id="dbt_deps",
-    bash_command="cd /opt/airflow/dbt && rm -f package-lock.yml && dbt deps --profiles-dir . --target prod",
+    bash_command="cd /opt/airflow/dbt && rm -f package-lock.yml && dbt deps --profiles-dir . --profile bankshield --target prod",
     dag=dag,
 )
 
@@ -64,13 +64,13 @@ dbt_deps = BashOperator(
 with TaskGroup("stg_models", dag=dag) as stg_group:
     dbt_stg_run = BashOperator(
         task_id="dbt_stg_run",
-        bash_command="cd /opt/airflow/dbt && dbt run --select stg.* --profiles-dir . --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt run --select stg.* --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
     dbt_stg_test = BashOperator(
         task_id="dbt_stg_test",
-        bash_command="cd /opt/airflow/dbt && dbt test --select stg.* --profiles-dir . --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt test --select stg.* --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
@@ -80,13 +80,13 @@ with TaskGroup("stg_models", dag=dag) as stg_group:
 with TaskGroup("ods_models", dag=dag) as ods_group:
     dbt_ods_run = BashOperator(
         task_id="dbt_ods_run",
-        bash_command="cd /opt/airflow/dbt && dbt run --select ods.* --profiles-dir . --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt run --select ods.* --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
     dbt_ods_test = BashOperator(
         task_id="dbt_ods_test",
-        bash_command="cd /opt/airflow/dbt && dbt test --select ods.* --profiles-dir . --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt test --select ods.* --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
@@ -96,13 +96,13 @@ with TaskGroup("ods_models", dag=dag) as ods_group:
 with TaskGroup("dwh_models", dag=dag) as dwh_group:
     dbt_dwh_run = BashOperator(
         task_id="dbt_dwh_run",
-        bash_command="cd /opt/airflow/dbt && dbt run --select dwh.* --profiles-dir . --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt run --select dwh.* --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
     dbt_dwh_test = BashOperator(
         task_id="dbt_dwh_test",
-        bash_command="cd /opt/airflow/dbt && dbt test --select dwh.* --profiles-dir . --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt test --select dwh.* --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
@@ -112,13 +112,13 @@ with TaskGroup("dwh_models", dag=dag) as dwh_group:
 with TaskGroup("dm_models", dag=dag) as dm_group:
     dbt_dm_run = BashOperator(
         task_id="dbt_dm_run",
-        bash_command="cd /opt/airflow/dbt && dbt run --select dm.* --profiles-dir . --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt run --select dm.* --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
     dbt_dm_test = BashOperator(
         task_id="dbt_dm_test",
-        bash_command="cd /opt/airflow/dbt && dbt test --select dm.* --profiles-dir . --target prod",
+        bash_command="cd /opt/airflow/dbt && dbt test --select dm.* --profiles-dir . --profile bankshield --target prod",
         dag=dag,
     )
 
@@ -127,7 +127,7 @@ with TaskGroup("dm_models", dag=dag) as dm_group:
 # Custom tests
 dbt_custom_tests = BashOperator(
     task_id="dbt_custom_tests",
-    bash_command="cd /opt/airflow/dbt && dbt test --select test_type:data --profiles-dir . --target prod",
+    bash_command="cd /opt/airflow/dbt && dbt test --select test_type:data --profiles-dir . --profile bankshield --target prod",
     dag=dag,
 )
 
@@ -137,7 +137,7 @@ dbt_custom_tests = BashOperator(
 # Мониторинг работает через модели Elementary, результаты доступны в UI
 dbt_elementary = BashOperator(
     task_id="dbt_elementary",
-    bash_command="cd /opt/airflow/dbt && dbt run --select package:elementary --profiles-dir . --target prod",
+    bash_command="cd /opt/airflow/dbt && dbt run --select package:elementary --profiles-dir . --profile bankshield --target prod",
     dag=dag,
 )
 
@@ -153,7 +153,7 @@ dbt_elementary_report = BashOperator(
 # DBT docs generation
 dbt_docs = BashOperator(
     task_id="dbt_docs",
-    bash_command="cd /opt/airflow/dbt && dbt docs generate --profiles-dir . --target prod",
+    bash_command="cd /opt/airflow/dbt && dbt docs generate --profiles-dir . --profile bankshield --target prod",
     dag=dag,
 )
 
