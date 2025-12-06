@@ -3,9 +3,12 @@
 import logging
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
-from kaggle.api.kaggle_api_extended import KaggleApi
+
+if TYPE_CHECKING:
+    from kaggle.api.kaggle_api_extended import KaggleApi
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +25,7 @@ class KaggleDatasetLoader:
         """
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
-        self.api: KaggleApi | None = None
+        self.api: "KaggleApi | None" = None
         self._authenticated = False
 
     def _authenticate(self) -> None:
@@ -51,6 +54,9 @@ class KaggleDatasetLoader:
 
             # Пытаемся аутентифицироваться только если есть credentials
             if os.getenv("KAGGLE_USERNAME") and os.getenv("KAGGLE_KEY"):
+                # Ленивый импорт KaggleApi только когда он нужен
+                from kaggle.api.kaggle_api_extended import KaggleApi  # noqa: PLC0415
+
                 self.api = KaggleApi()
                 self.api.authenticate()
                 self._authenticated = True
