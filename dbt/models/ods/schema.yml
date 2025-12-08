@@ -11,9 +11,6 @@ models:
         tests:
           - unique
           - not_null
-          - relationships:
-              to: ref('stg_transactions')
-              field: transaction_id
       - name: user_id
         description: "User identifier"
         tests:

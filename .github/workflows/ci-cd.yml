@@ -36,10 +36,6 @@ jobs:
           uv run ruff format --check .
 
       - name: Run tests
-        env:
-          # Убеждаемся, что Kaggle API не используется в тестах
-          USE_KAGGLE_DATA: "false"
-          KAGGLE_API_TOKEN: ""
         run: |
           uv run pytest --cov=bankshield --cov-report=xml --cov-report=term
 

@@ -1,4 +1,8 @@
-"""ETL DAG for extracting transactions from MongoDB and loading into PostgreSQL."""
+"""EL DAG for extracting transactions from MongoDB and loading RAW data into PostgreSQL.
+
+EL-процесс: Извлечение данных из MongoDB и загрузка в PostgreSQL БЕЗ трансформации.
+Вся трансформация (парсинг JSON, очистка) выполняется в DBT слое STG.
+"""
 
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -18,13 +22,13 @@ default_args = {
 
 # DAG definition
 dag = DAG(
-    "transactions_etl",
+    "transactions_el",
     default_args=default_args,
-    description="ETL process: Extract transactions from MongoDB, Load to PostgreSQL",
+    description="EL process: Extract transactions from MongoDB, Load RAW to PostgreSQL (no transformation)",
     schedule_interval=timedelta(minutes=30),
     start_date=datetime(2024, 1, 1),
     catchup=False,
-    tags=["etl", "mongodb", "postgresql", "fraud-detection"],
+    tags=["el", "mongodb", "postgresql", "bankshield"],
 )
 
 
@@ -33,8 +37,10 @@ def extract_transactions(**context) -> List[Dict]:
     Extract transactions from MongoDB.
 
     Returns:
-        List of transaction documents from MongoDB
+        List of transaction documents from MongoDB (RAW, без трансформации)
     """
+    import json
+
     from airflow.models import Variable
     from pymongo import MongoClient
 
@@ -66,14 +72,21 @@ def extract_transactions(**context) -> List[Dict]:
         else:
             query = {}
 
-        # Extract data
+        # Extract RAW data without any transformation
         documents = list(collection.find(query))
         print(f"Extracted {len(documents)} transactions from MongoDB")
 
-        # Convert ObjectId to string for JSON serialization
+        # Convert ObjectId to string and nested dicts to JSON strings for PostgreSQL
         for doc in documents:
             if "_id" in doc:
                 doc["_id"] = str(doc["_id"])
+            # Сохраняем вложенные объекты как JSON строки для последующего парсинга в DBT
+            if "location" in doc and isinstance(doc["location"], dict):
+                doc["location_json"] = json.dumps(doc["location"])
+            if "device_info" in doc and isinstance(doc["device_info"], dict):
+                doc["device_info_json"] = json.dumps(doc["device_info"])
+            if "metadata" in doc and isinstance(doc["metadata"], dict):
+                doc["metadata_json"] = json.dumps(doc["metadata"])
 
         return documents
     finally:
@@ -82,7 +95,10 @@ def extract_transactions(**context) -> List[Dict]:
 
 def load_transactions(**context) -> None:
     """
-    Load transactions into PostgreSQL.
+    Load RAW transactions into PostgreSQL.
+
+    Загружает данные БЕЗ парсинга вложенных объектов.
+    Парсинг выполняется в DBT слое STG (stg_transactions model).
 
     Args:
         context: Airflow context containing task instance
@@ -118,40 +134,37 @@ def load_transactions(**context) -> None:
     try:
         cursor = conn.cursor()
 
-        # Create table if not exists
+        # Create RAW table - хранит данные как есть, без парсинга
+        # Парсинг location, device_info, metadata будет в DBT (STG слой)
         create_table_query = """
-        CREATE TABLE IF NOT EXISTS transactions (
+        CREATE TABLE IF NOT EXISTS transactions_raw (
             id SERIAL PRIMARY KEY,
             mongo_id VARCHAR(255) UNIQUE,
             timestamp TIMESTAMP NOT NULL,
-            transaction_id VARCHAR(100) UNIQUE,
+            transaction_id VARCHAR(100),
             user_id VARCHAR(100),
-            amount DECIMAL(15, 2) NOT NULL,
+            amount DECIMAL(15, 2),
             currency VARCHAR(10),
             transaction_type VARCHAR(50),
             merchant_category VARCHAR(100),
             merchant_name VARCHAR(255),
-            country VARCHAR(100),
-            city VARCHAR(100),
-            latitude DECIMAL(9, 6),
-            longitude DECIMAL(9, 6),
-            device_type VARCHAR(50),
-            os VARCHAR(50),
-            ip_address VARCHAR(50),
             is_fraud BOOLEAN DEFAULT FALSE,
             risk_score DECIMAL(5, 3),
-            session_id VARCHAR(100),
+            -- JSON поля для парсинга в DBT
+            location_json JSONB,
+            device_info_json JSONB,
+            metadata_json JSONB,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """
         cursor.execute(create_table_query)
 
-        # Create indexes if not exists
+        # Create indexes
         indexes = [
-            "CREATE INDEX IF NOT EXISTS idx_timestamp ON transactions(timestamp)",
-            "CREATE INDEX IF NOT EXISTS idx_user_id ON transactions(user_id)",
-            "CREATE INDEX IF NOT EXISTS idx_is_fraud ON transactions(is_fraud)",
-            "CREATE INDEX IF NOT EXISTS idx_transaction_id ON transactions(transaction_id)",
+            "CREATE INDEX IF NOT EXISTS idx_raw_timestamp ON transactions_raw(timestamp)",
+            "CREATE INDEX IF NOT EXISTS idx_raw_transaction_id ON transactions_raw(transaction_id)",
+            "CREATE INDEX IF NOT EXISTS idx_raw_user_id ON transactions_raw(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_raw_is_fraud ON transactions_raw(is_fraud)",
         ]
         for index_query in indexes:
             try:
@@ -159,13 +172,9 @@ def load_transactions(**context) -> None:
             except Exception as e:
                 print(f"Warning: Could not create index: {e}")
 
-        # Prepare data for insertion
+        # Prepare RAW data for insertion - NO parsing of nested objects
         values = []
         for doc in documents:
-            location = doc.get("location", {})
-            device_info = doc.get("device_info", {})
-            metadata = doc.get("metadata", {})
-
             values.append(
                 (
                     doc.get("_id"),
@@ -177,26 +186,22 @@ def load_transactions(**context) -> None:
                     doc.get("transaction_type"),
                     doc.get("merchant_category"),
                     doc.get("merchant_name"),
-                    location.get("country"),
-                    location.get("city"),
-                    location.get("latitude"),
-                    location.get("longitude"),
-                    device_info.get("device_type"),
-                    device_info.get("os"),
-                    device_info.get("ip_address"),
                     doc.get("is_fraud", False),
                     doc.get("risk_score"),
-                    metadata.get("session_id"),
+                    # JSON поля сохраняются как есть
+                    doc.get("location_json"),
+                    doc.get("device_info_json"),
+                    doc.get("metadata_json"),
                 ),
             )
 
-        # Insert data (using ON CONFLICT to avoid duplicates)
+        # Insert RAW data (using ON CONFLICT to avoid duplicates)
         insert_query = """
-        INSERT INTO transactions (
+        INSERT INTO transactions_raw (
             mongo_id, timestamp, transaction_id, user_id, amount, currency,
             transaction_type, merchant_category, merchant_name,
-            country, city, latitude, longitude,
-            device_type, os, ip_address, is_fraud, risk_score, session_id
+            is_fraud, risk_score,
+            location_json, device_info_json, metadata_json
         ) VALUES %s
         ON CONFLICT (mongo_id) DO NOTHING
         """
@@ -205,8 +210,9 @@ def load_transactions(**context) -> None:
 
         fraud_count = sum(1 for doc in documents if doc.get("is_fraud", False))
         print(
-            f"Loaded {len(values)} transactions into PostgreSQL "
-            f"({fraud_count} fraudulent transactions)",
+            f"Loaded {len(values)} RAW transactions into PostgreSQL "
+            f"({fraud_count} fraudulent transactions). "
+            f"Parsing will be done in DBT STG layer."
         )
     finally:
         cursor.close()
@@ -226,5 +232,6 @@ load_task = PythonOperator(
     dag=dag,
 )
 
-# Set task dependencies
+# Set task dependencies: Extract -> Load
+# Transformation is done separately in DBT (dbt_transformations DAG)
 extract_task >> load_task

@@ -31,8 +31,6 @@ class TestTransactionCollector:
                 "MONGODB_DB": "test_db",
                 "MONGODB_COLLECTION": "test_collection",
                 "COLLECT_INTERVAL": "30",
-                "USE_KAGGLE_DATA": "true",
-                "KAGGLE_DATASET": "test/dataset",
             },
         ):
             collector = TransactionCollector()
@@ -43,8 +41,6 @@ class TestTransactionCollector:
             assert collector.mongodb_db == "test_db"
             assert collector.mongodb_collection == "test_collection"
             assert collector.collect_interval == 30
-            assert collector.use_kaggle_data is True
-            assert collector.kaggle_dataset == "test/dataset"
 
     def test_generate_transaction(self) -> None:
         """Test transaction generation."""

@@ -8,7 +8,6 @@ dependencies = [
     "pymongo>=4.6.1",
     "pandas>=2.1.0",
     "numpy>=1.24.0",
-    "kaggle>=1.5.16",
     "dbt-core>=1.7.0",
     "dbt-postgres>=1.7.0",
     "elementary-data[postgres]>=0.20.0",

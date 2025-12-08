@@ -2,29 +2,24 @@ version: 2
 
 sources:
   - name: raw
-    description: "Raw data sources loaded from MongoDB via Airflow ETL"
+    description: "Raw data sources loaded from MongoDB via Airflow EL process"
     database: analytics_db
     schema: public
     tables:
-      - name: transactions
-        description: "Raw transaction data extracted from MongoDB"
+      - name: transactions_raw
+        description: "RAW transaction data extracted from MongoDB. JSON fields parsed in STG layer."
         columns:
-          - name: transaction_id
-            description: "Unique transaction identifier"
+          - name: mongo_id
+            description: "MongoDB document ID"
             tests:
               - unique
               - not_null
+          - name: transaction_id
+            description: "Unique transaction identifier"
           - name: user_id
             description: "User identifier"
-            tests:
-              - not_null
           - name: amount
             description: "Transaction amount"
-            tests:
-              - not_null
-              - dbt_utils.accepted_range:
-                  min_value: 0
-                  inclusive: true
           - name: currency
             description: "Transaction currency (USD, EUR, RUB)"
           - name: transaction_type
@@ -33,32 +28,18 @@ sources:
             description: "Category of merchant"
           - name: merchant_name
             description: "Name of merchant"
-          - name: country
-            description: "Country"
-          - name: city
-            description: "City"
-          - name: latitude
-            description: "Latitude"
-          - name: longitude
-            description: "Longitude"
-          - name: device_type
-            description: "Device type"
-          - name: os
-            description: "Operating system"
-          - name: ip_address
-            description: "IP address"
-          - name: session_id
-            description: "Session identifier"
           - name: is_fraud
             description: "Fraud flag"
           - name: risk_score
             description: "Risk score (0-1)"
-            tests:
-              - dbt_utils.accepted_range:
-                  min_value: 0
-                  max_value: 1
-                  inclusive: true
           - name: timestamp
             description: "Transaction timestamp"
             tests:
               - not_null
+          # JSON поля для парсинга в DBT
+          - name: location_json
+            description: "Location data as JSONB (country, city, lat, lon)"
+          - name: device_info_json
+            description: "Device info as JSONB (device_type, os, ip_address)"
+          - name: metadata_json
+            description: "Metadata as JSONB (session_id, etc.)"

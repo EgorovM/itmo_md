@@ -6,11 +6,13 @@
     )
 }}
 
--- Staging model: очистка и парсинг транзакций из PostgreSQL
--- Источник: таблица transactions (загружена из MongoDB через Airflow)
+-- Staging model: ПАРСИНГ JSON и очистка транзакций
+-- Источник: таблица transactions_raw (RAW данные из MongoDB через Airflow EL)
+-- Здесь парсятся JSON поля location_json, device_info_json, metadata_json
 
 with source_data as (
     select
+        mongo_id,
         transaction_id,
         user_id,
         amount,
@@ -18,18 +20,20 @@ with source_data as (
         transaction_type,
         merchant_category,
         merchant_name,
-        country,
-        city,
-        latitude,
-        longitude,
-        device_type,
-        os,
-        ip_address,
         is_fraud,
         risk_score,
         timestamp,
-        session_id
-    from {{ source('raw', 'transactions') }}
+        -- Парсинг JSON полей (вся трансформация в DBT, не в Python!)
+        location_json->>'country' as country,
+        location_json->>'city' as city,
+        (location_json->>'latitude')::decimal(9,6) as latitude,
+        (location_json->>'longitude')::decimal(9,6) as longitude,
+        device_info_json->>'device_type' as device_type,
+        device_info_json->>'os' as os,
+        device_info_json->>'ip_address' as ip_address,
+        metadata_json->>'session_id' as session_id,
+        metadata_json->>'user_agent' as user_agent
+    from {{ source('raw', 'transactions_raw') }}
 ),
 
 cleaned as (
@@ -59,13 +63,13 @@ cleaned as (
         -- Очистка merchant_name
         trim(merchant_name) as merchant_name,
 
-        -- Географические данные (уже распарсены)
+        -- Географические данные (парсинг из JSON)
         trim(country) as country,
         trim(city) as city,
         latitude,
         longitude,
 
-        -- Устройство (уже распарсено)
+        -- Устройство (парсинг из JSON)
         lower(trim(device_type)) as device_type,
         trim(os) as os,
         trim(ip_address) as ip_address,
@@ -87,8 +91,9 @@ cleaned as (
             else timestamp::timestamp
         end as transaction_timestamp,
 
-        -- Сессия
+        -- Метаданные (парсинг из JSON)
         trim(session_id) as session_id,
+        trim(user_agent) as user_agent,
 
         -- Дополнительные вычисляемые поля
         extract(epoch from (case when timestamp is null then current_timestamp else timestamp::timestamp end)) as transaction_epoch,
@@ -118,15 +123,14 @@ final as (
         risk_score,
         transaction_timestamp,
         session_id,
+        user_agent,
         transaction_epoch,
         transaction_hour,
         transaction_day_of_week,
         -- Флаги для валидации
         case when transaction_id is null or transaction_id = '' then false else true end as is_valid_transaction_id,
         case when user_id is null or user_id = '' then false else true end as is_valid_user_id,
-        case when amount > 0 then true else false end as is_valid_amount,
-        -- user_agent отсутствует в таблице, используем NULL
-        null::varchar as user_agent
+        case when amount > 0 then true else false end as is_valid_amount
     from cleaned
 )
 
