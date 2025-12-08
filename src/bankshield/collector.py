@@ -6,7 +6,6 @@ import random
 import time
 from datetime import datetime, timedelta
 
-import pandas as pd
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
@@ -25,14 +24,10 @@ class TransactionCollector:
         self.mongodb_db = os.getenv("MONGODB_DB", "banking_data")
         self.mongodb_collection = os.getenv("MONGODB_COLLECTION", "transactions")
         self.collect_interval = int(os.getenv("COLLECT_INTERVAL", "60"))
-        self.use_kaggle_data = os.getenv("USE_KAGGLE_DATA", "false").lower() == "true"
-        self.kaggle_dataset = os.getenv("KAGGLE_DATASET", "")
 
         self.client: MongoClient | None = None
         self.db = None
         self.collection = None
-        self.kaggle_df: pd.DataFrame | None = None
-        self.kaggle_index = 0
 
     def connect(self) -> bool:
         """Подключение к MongoDB."""
@@ -56,40 +51,10 @@ class TransactionCollector:
             logger.error(f"Ошибка подключения к MongoDB: {e}")
             return False
 
-    def load_kaggle_data(self) -> None:
-        """Загрузка данных с Kaggle."""
-        if not self.use_kaggle_data or not self.kaggle_dataset:
-            logger.info("Использование синтетических данных")
-            return
-
-        try:
-            from bankshield.kaggle_loader import KaggleDatasetLoader
-
-            loader = KaggleDatasetLoader()
-            self.kaggle_df = loader.load_csv(self.kaggle_dataset)
-            logger.info(f"Загружено {len(self.kaggle_df)} записей с Kaggle")
-        except Exception as e:
-            logger.warning(
-                f"Не удалось загрузить данные с Kaggle: {e}. Используются синтетические данные"
-            )
-
     def generate_transaction(self) -> dict:
         """
-        Генерация транзакции.
-
-        Если загружены данные с Kaggle, использует их, иначе генерирует синтетические.
+        Генерация синтетической транзакции.
         """
-        if self.kaggle_df is not None and self.kaggle_index < len(self.kaggle_df):
-            # Используем данные с Kaggle
-            row = self.kaggle_df.iloc[self.kaggle_index]
-            self.kaggle_index = (self.kaggle_index + 1) % len(self.kaggle_df)
-
-            # Преобразуем в словарь
-            transaction = row.to_dict()
-            transaction["timestamp"] = datetime.utcnow()
-            return transaction
-
-        # Генерация синтетической транзакции
         transaction_types = ["debit", "credit", "transfer", "withdrawal", "deposit"]
         merchant_categories = [
             "grocery",
@@ -165,10 +130,6 @@ class TransactionCollector:
         if not self.connect():
             logger.error("Не удалось подключиться к MongoDB. Завершение работы.")
             return
-
-        # Загрузка данных с Kaggle, если указано
-        if self.use_kaggle_data and self.kaggle_dataset:
-            self.load_kaggle_data()
 
         logger.info(f"Интервал сбора транзакций: {self.collect_interval} секунд")
 

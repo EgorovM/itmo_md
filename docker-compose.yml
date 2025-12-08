@@ -55,7 +55,7 @@ services:
       - ./dbt:/opt/airflow/dbt
     command: >
       bash -c "
-      pip install pymongo psycopg2-binary pandas numpy dbt-core dbt-postgres 'elementary-data[postgres]' &&
+      pip install pymongo psycopg2-binary pandas numpy dbt-core dbt-postgres 'elementary-data[postgres]' requests &&
       airflow webserver
       "
     depends_on:
@@ -83,7 +83,7 @@ services:
       - ./dbt:/opt/airflow/dbt
     command: >
       bash -c "
-      pip install pymongo psycopg2-binary pandas numpy dbt-core dbt-postgres 'elementary-data[postgres]' &&
+      pip install pymongo psycopg2-binary pandas numpy dbt-core dbt-postgres 'elementary-data[postgres]' requests &&
       airflow scheduler
       "
     depends_on:
@@ -147,10 +147,7 @@ services:
       - MONGODB_PASSWORD=mongo_password
       - MONGODB_DB=banking_data
       - MONGODB_COLLECTION=transactions
-      - USE_KAGGLE_DATA=false
-      - KAGGLE_DATASET=
       - COLLECT_INTERVAL=60
-      - KAGGLE_API_TOKEN=${KAGGLE_API_TOKEN:-}
     depends_on:
       mongodb:
         condition: service_healthy

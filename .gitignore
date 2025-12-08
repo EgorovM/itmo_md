@@ -65,11 +65,8 @@ dbt/logs/
 dbt/edr_target/
 dbt/profiles.yml
 
-# Kaggle data
+# Data files
 data/
 *.csv
 *.zip
 !data/.gitkeep
-
-# Kaggle credentials
-.kaggle/

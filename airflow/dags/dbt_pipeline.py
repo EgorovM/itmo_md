@@ -1,11 +1,20 @@
-"""Airflow DAG for running DBT transformations."""
+"""Airflow DAG for running DBT transformations.
+
+DAG запускается каждый час и выполняет:
+1. Установка DBT пакетов (dbt deps)
+2. STG модели - парсинг JSON и очистка данных
+3. ODS модели - нормализация
+4. DWH модели - агрегация (инкрементальная)
+5. DM модели - бизнес-витрины
+6. Тесты и Elementary мониторинг
+7. Генерация документации
+"""
 
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
 from airflow import DAG
 from airflow.operators.bash import BashOperator
-from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
 default_args: Dict[str, Any] = {
@@ -20,40 +29,14 @@ default_args: Dict[str, Any] = {
 dag = DAG(
     "dbt_transformations",
     default_args=default_args,
-    description="DBT pipeline for BankShield data transformations",
+    description="DBT pipeline for BankShield data transformations (STG -> ODS -> DWH -> DM)",
     schedule_interval=timedelta(hours=1),  # Запуск каждый час
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["dbt", "transformations", "bankshield"],
 )
 
-
-def check_dbt_installed() -> None:
-    """Проверка установки DBT."""
-    import subprocess
-    import sys
-
-    try:
-        result = subprocess.run(
-            ["dbt", "--version"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        print(f"DBT version: {result.stdout}")
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        print(f"Error checking DBT: {e}")
-        sys.exit(1)
-
-
-check_dbt = PythonOperator(
-    task_id="check_dbt_installed",
-    python_callable=check_dbt_installed,
-    dag=dag,
-)
-
-# DBT deps - установка пакетов
-# Для DBT 1.8.7 удаляем package-lock.yml перед установкой, чтобы избежать конфликтов
+# DBT deps - установка пакетов (только при первом запуске или обновлении packages.yml)
 dbt_deps = BashOperator(
     task_id="dbt_deps",
     bash_command="cd /opt/airflow/dbt && rm -f package-lock.yml && dbt deps --profiles-dir . --profile bankshield --target prod",
@@ -158,9 +141,9 @@ dbt_docs = BashOperator(
 )
 
 # Task dependencies
+# Порядок: deps -> STG (парсинг JSON) -> ODS -> DWH (incremental) -> DM -> tests -> elementary -> docs
 (
-    check_dbt
-    >> dbt_deps
+    dbt_deps
     >> stg_group
     >> ods_group
     >> dwh_group
