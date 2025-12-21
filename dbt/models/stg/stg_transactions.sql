@@ -38,6 +38,9 @@ with source_data as (
 
 cleaned as (
     select
+        -- Сохраняем mongo_id для дедупликации
+        mongo_id,
+
         -- Очистка и валидация transaction_id
         trim(transaction_id) as transaction_id,
 
@@ -103,7 +106,7 @@ cleaned as (
     from source_data
 ),
 
-final as (
+cleaned_with_rank as (
     select
         transaction_id,
         user_id,
@@ -130,8 +133,46 @@ final as (
         -- Флаги для валидации
         case when transaction_id is null or transaction_id = '' then false else true end as is_valid_transaction_id,
         case when user_id is null or user_id = '' then false else true end as is_valid_user_id,
-        case when amount > 0 then true else false end as is_valid_amount
+        case when amount > 0 then true else false end as is_valid_amount,
+        -- Для дедупликации: используем mongo_id и timestamp для определения последней записи
+        mongo_id,
+        row_number() over (
+            partition by transaction_id
+            order by transaction_timestamp desc, mongo_id desc
+        ) as rn
     from cleaned
+),
+
+final as (
+    select
+        transaction_id,
+        user_id,
+        amount,
+        currency,
+        transaction_type,
+        merchant_category,
+        merchant_name,
+        country,
+        city,
+        latitude,
+        longitude,
+        device_type,
+        os,
+        ip_address,
+        is_fraud,
+        risk_score,
+        transaction_timestamp,
+        session_id,
+        user_agent,
+        transaction_epoch,
+        transaction_hour,
+        transaction_day_of_week,
+        -- Флаги для валидации
+        is_valid_transaction_id,
+        is_valid_user_id,
+        is_valid_amount
+    from cleaned_with_rank
+    where rn = 1  -- Оставляем только последнюю запись для каждого transaction_id
 )
 
 select * from final
