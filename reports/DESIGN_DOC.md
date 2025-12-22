@@ -1160,78 +1160,10 @@ Response:
 - **Цель**: Найти точку отказа системы
 - **Ожидаемый результат**: Graceful degradation, no crashes
 
-### 6.2 Инструменты для нагрузочного тестирования
 
-**Apache JMeter**
-```xml
-<!-- Thread Group -->
-<ThreadGroup>
-  <numThreads>100</numThreads>
-  <rampUp>60</rampUp>
-  <duration>600</duration>
-</ThreadGroup>
+### 6.2 Результаты нагрузочного тестирования
 
-<!-- HTTP Request -->
-<HTTPSamplerProxy>
-  <stringProp name="HTTPSampler.domain">158.160.186.46</stringProp>
-  <stringProp name="HTTPSampler.port">8100</stringProp>
-  <stringProp name="HTTPSampler.path">/transactions</stringProp>
-  <stringProp name="HTTPSampler.method">POST</stringProp>
-</HTTPSamplerProxy>
-```
-
-**Locust (Python)**
-```python
-from locust import HttpUser, task, between
-
-class BankShieldUser(HttpUser):
-    wait_time = between(1, 5)
-    
-    @task(7)
-    def create_transaction(self):
-        self.client.post("/transactions")
-    
-    @task(2)
-    def get_stats(self):
-        self.client.get("/transactions/stats")
-    
-    @task(1)
-    def get_recent(self):
-        self.client.get("/transactions/recent?limit=10")
-
-# Запуск: locust -f load_test.py --host=http://158.160.186.46:8100
-```
-
-**k6 (Go)**
-```javascript
-import http from 'k6/http';
-import { check, sleep } from 'k6';
-
-export let options = {
-  stages: [
-    { duration: '5m', target: 10 },  // Ramp up
-    { duration: '10m', target: 10 }, // Stay at 10 RPM
-    { duration: '5m', target: 0 },   // Ramp down
-  ],
-  thresholds: {
-    http_req_duration: ['p(95)<10000'], // 95% requests < 10s
-    http_req_failed: ['rate<0.01'],     // Error rate < 1%
-  },
-};
-
-export default function () {
-  let response = http.post('http://158.160.186.46:8100/transactions');
-  check(response, {
-    'status is 200': (r) => r.status === 200,
-    'response time < 10s': (r) => r.timings.duration < 10000,
-  });
-  sleep(6); // 10 requests per minute
-}
-```
-
-### 6.3 Результаты нагрузочного тестирования
-
-#### 6.3.1 Сценарий 1: Baseline (1 RPM)
+#### 6.2.1 Сценарий 1: Baseline (1 RPM)
 
 | Метрика | Значение | Статус |
 |---------|----------|--------|
@@ -1244,7 +1176,7 @@ export default function () {
 
 **Вывод**: Система отлично справляется с минимальной нагрузкой. Все требования выполнены.
 
-#### 6.3.2 Сценарий 2: Normal Load (10 RPM)
+#### 6.2.2 Сценарий 2: Normal Load (10 RPM)
 
 | Метрика | Значение | Статус |
 |---------|----------|--------|
@@ -1264,7 +1196,7 @@ export default function () {
 - Увеличить MongoDB connection pool до 50
 - Добавить retry logic в API
 
-#### 6.3.3 Сценарий 3: Peak Load (100 RPM)
+#### 6.2.3 Сценарий 3: Peak Load (100 RPM)
 
 | Метрика | Значение | Статус |
 |---------|----------|--------|
@@ -1291,7 +1223,7 @@ export default function () {
 2. MongoDB Replica Set для распределения нагрузки
 3. Увеличение CPU/RAM для MongoDB
 
-#### 6.3.4 Сценарий 4: Stress Test (1000 RPM)
+#### 6.2.4 Сценарий 4: Stress Test (1000 RPM)
 
 | Метрика | Значение | Статус |
 |---------|----------|--------|
@@ -1316,7 +1248,7 @@ export default function () {
 - PostgreSQL: Read Replicas (2 nodes)
 - Увеличение ресурсов сервера (см. раздел 4.3.2)
 
-### 6.4 Графики результатов
+### 6.3 Графики результатов
 
 #### Response Time Distribution
 
@@ -1346,7 +1278,7 @@ export default function () {
   p99: ████████████████████████████████████████████████████████████████████████████████████████ 120+s
 ```
 
-### 6.5 Выводы и рекомендации
+### 6.4 Выводы и рекомендации
 
 #### Текущее состояние
 ✅ **Система соответствует требованиям** для нагрузки до 10 RPM  
