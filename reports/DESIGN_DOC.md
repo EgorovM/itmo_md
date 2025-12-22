@@ -1472,13 +1472,4 @@ export default function () {
 - **PCI DSS** — Payment Card Industry Data Security Standard
 - **GDPR** — General Data Protection Regulation
 
-### Приложение C: История изменений
-
-| Версия | Дата | Автор | Изменения |
-|--------|------|-------|-----------|
-| 1.0 | 2025-12-22 | Команда BankShield | Первая версия документа |
-
----
-
-**Конец документа**
 
