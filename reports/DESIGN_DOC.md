@@ -28,7 +28,7 @@
 > - Deployment Architecture
 > - API Request Flow
 > - Data Quality Monitoring Flow
-> - Future Architecture (с ML и Real-time)
+> - Future Architecture
 
 ---
 
@@ -887,7 +887,7 @@ Response:
 #### 5.1.1 Горизонтальное масштабирование
 
 **REST API (FastAPI)**
-- **Способ**: Запуск нескольких инстансов за Load Balancer (Nginx/HAProxy)
+- **Способ**: Запуск нескольких инстансов за Load Balancer 
 - **Конфигурация**: 
   ```yaml
   api:
@@ -1367,10 +1367,6 @@ Response:
 - [README.md](../README.md)
 - [HW1_REPORT.md](HW1_REPORT.md)
 - [HW2_REPORT.md](HW2_REPORT.md)
-
-**Контакты**:
-- Email: team@bankshield.example.com
-- Slack: #bankshield-project
 
 ---
 
